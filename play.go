@@ -28,7 +28,8 @@ func main() {
 	r := wl.GetOrParseNew("hello", "2-5s")
 	last := time.Now()
 	for i := 1; i <= 10; i++ {
-		r.Wait()
+		// r.Wait()
+		r.WaitMore()
 
 		cur := time.Now()
 		log.Infow("approved to run", "index", i, "interval", cur.Sub(last))
