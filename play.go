@@ -25,6 +25,10 @@ func main() {
 		"pwd", pwd,
 	)
 
+	test1()
+}
+
+func test1() {
 	r := wl.GetOrParseNew("hello", "2-5s")
 	last := time.Now()
 	for i := 1; i <= 10; i++ {
