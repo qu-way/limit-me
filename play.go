@@ -7,7 +7,6 @@ import (
 	wl "github.com/kimsudo/wulimt"
 	"github.com/logcfg/getzap"
 	"go.uber.org/zap"
-	xr "golang.org/x/time/rate"
 )
 
 var (
@@ -19,6 +18,8 @@ func init() {
 }
 
 func main() {
+	defer log.Sync()
+
 	pwd, _ := os.Getwd()
 	host, _ := os.Hostname()
 	log.Debugw("hello world",
@@ -27,7 +28,8 @@ func main() {
 	)
 
 	// test1()
-	test2()
+	// test2()
+	test3()
 }
 
 func test1() {
@@ -64,17 +66,45 @@ func test2() {
 
 	}(dataC)
 
-	var (
-		Limit   = xr.Limit(2 / (time.Second * 5))
-		Request = 2
-	)
-	r := xr.NewLimiter(Limit, Request)
+	r := wl.GetOrParseNew("hello", "2-5s")
 
 	for i := 1; i <= 10; i++ {
-		rev := r.Reserve()
-		allow := r.Allow()
+		r.Wait()
+		log.Debugw("approved to send", "index", i)
+		dataC <- i
+	}
 
-		log.Debugw("approved to send", "index", i, "reserve", rev, "allowed", allow)
+	dataC <- 0
+	<-doneC
+	log.Debugw("all is done")
+}
+
+func test3() {
+	dataC := make(chan int, 10)
+	doneC := make(chan bool)
+
+	last := time.Now()
+	go func(c <-chan int) {
+		for {
+			d := <-c
+			cur := time.Now()
+			if d <= 0 {
+				log.Warnw("got signal to stop", "data", d)
+				break
+			}
+
+			log.Infow("task to run", "data", d, "interval", cur.Sub(last))
+			last = cur
+		}
+		doneC <- true
+
+	}(dataC)
+
+	r := wl.GetOrParseNew("hello", "2-5s")
+
+	for i := 1; i <= 10; i++ {
+		r.Wait()
+		log.Debugw("approved to send", "index", i)
 		dataC <- i
 	}
 
