@@ -34,7 +34,8 @@ func main() {
 	// test3()
 	// test4()
 	// test5()
-	test6()
+	// test6()
+	test7()
 }
 
 func test1() {
@@ -268,6 +269,57 @@ func test6() {
 		log.Debugw("approved to send", "index", i)
 		dataC <- i
 	}
+
+	dataC <- 0
+	<-doneC
+
+	end := time.Now()
+	log.Debugw("all is done", "time_cost", end.Sub(start))
+}
+
+func test7() {
+	dataC := make(chan int, 10)
+	doneC := make(chan bool)
+
+	start := time.Now()
+
+	last := time.Now()
+	go func(c <-chan int) {
+		for {
+			d := <-c
+			cur := time.Now()
+			if d <= 0 {
+				log.Warnw("got signal to stop", "data", d)
+				break
+			}
+
+			log.Infow("task to run", "data", d, "interval", cur.Sub(last))
+			last = cur
+		}
+		doneC <- true
+
+	}(dataC)
+
+	r := xr.NewLimiter(xr.Every(time.Duration(float64(time.Second)*2.5)), 1)
+	ctx := context.TODO()
+	// ctx, _ := context.WithTimeout(context.Background(), 11*time.Second)
+
+	for j := 100; j <= 500; j += 100 {
+		go func(j int) {
+			for i := 1; i <= 10; i++ {
+				if err := r.Wait(ctx); err != nil {
+					log.Warnw("got limiter error", "worker", j, "index", i, zap.Error(err))
+				} else {
+					log.Debugw("approved to send", "worker", j, "index", i)
+					dataC <- i + j
+				}
+			}
+		}(j)
+	}
+
+	log.Info("begin waiting to finish")
+	time.Sleep(30 * time.Second)
+	log.Info("end waiting to finish")
 
 	dataC <- 0
 	<-doneC
