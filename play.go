@@ -30,7 +30,7 @@ func main() {
 	)
 
 	// test1()
-	// test2()
+	test2()
 	test3()
 }
 
@@ -50,6 +50,8 @@ func test1() {
 func test2() {
 	dataC := make(chan int, 10)
 	doneC := make(chan bool)
+
+	start := time.Now()
 
 	last := time.Now()
 	go func(c <-chan int) {
@@ -78,7 +80,9 @@ func test2() {
 
 	dataC <- 0
 	<-doneC
-	log.Debugw("all is done")
+
+	end := time.Now()
+	log.Debugw("all is done", "time_cost", end.Sub(start))
 }
 
 func test3() {
@@ -104,7 +108,7 @@ func test3() {
 
 	}(dataC)
 
-	r := xr.NewLimiter(xr.Every(time.Second), 1)
+	r := xr.NewLimiter(xr.Every(time.Duration(float64(time.Second)*2.5)), 1)
 	ctx := context.TODO()
 
 	for i := 1; i <= 10; i++ {
@@ -117,6 +121,5 @@ func test3() {
 	<-doneC
 
 	end := time.Now()
-
 	log.Debugw("all is done", "time_cost", end.Sub(start))
 }
