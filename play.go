@@ -1,12 +1,14 @@
 package main
 
 import (
+	"context"
 	"os"
 	"time"
 
 	wl "github.com/kimsudo/wulimt"
 	"github.com/logcfg/getzap"
 	"go.uber.org/zap"
+	xr "golang.org/x/time/rate"
 )
 
 var (
@@ -100,11 +102,12 @@ func test3() {
 
 	}(dataC)
 
-	r := wl.GetOrParseNew("hello", "2-5s")
+	r := xr.NewLimiter(xr.Every(time.Second), 1)
+	ctx := context.TODO()
 
 	for i := 1; i <= 10; i++ {
-		r.Wait()
-		log.Debugw("approved to send", "index", i)
+		err := r.Wait(ctx)
+		log.Debugw("approved to send", "index", i, zap.Error(err))
 		dataC <- i
 	}
 
