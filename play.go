@@ -30,7 +30,7 @@ func main() {
 	)
 
 	// test1()
-	test2()
+	// test2()
 	test3()
 }
 
@@ -109,12 +109,16 @@ func test3() {
 	}(dataC)
 
 	r := xr.NewLimiter(xr.Every(time.Duration(float64(time.Second)*2.5)), 1)
-	ctx := context.TODO()
+	// ctx := context.TODO()
+	ctx, _ := context.WithTimeout(context.Background(), 11*time.Second)
 
 	for i := 1; i <= 10; i++ {
-		err := r.Wait(ctx)
-		log.Debugw("approved to send", "index", i, zap.Error(err))
-		dataC <- i
+		if err := r.Wait(ctx); err != nil {
+			log.Warnw("got limiter error", "index", i, zap.Error(err))
+		} else {
+			log.Debugw("approved to send", "index", i)
+			dataC <- i
+		}
 	}
 
 	dataC <- 0
