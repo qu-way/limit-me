@@ -31,7 +31,8 @@ func main() {
 
 	// test1()
 	// test2()
-	test3()
+	// test3()
+	test4()
 }
 
 func test1() {
@@ -109,8 +110,8 @@ func test3() {
 	}(dataC)
 
 	r := xr.NewLimiter(xr.Every(time.Duration(float64(time.Second)*2.5)), 1)
-	// ctx := context.TODO()
-	ctx, _ := context.WithTimeout(context.Background(), 11*time.Second)
+	ctx := context.TODO()
+	// ctx, _ := context.WithTimeout(context.Background(), 11*time.Second)
 
 	for i := 1; i <= 10; i++ {
 		if err := r.Wait(ctx); err != nil {
@@ -118,6 +119,50 @@ func test3() {
 		} else {
 			log.Debugw("approved to send", "index", i)
 			dataC <- i
+		}
+	}
+
+	dataC <- 0
+	<-doneC
+
+	end := time.Now()
+	log.Debugw("all is done", "time_cost", end.Sub(start))
+}
+
+func test4() {
+	dataC := make(chan int, 10)
+	doneC := make(chan bool)
+
+	start := time.Now()
+
+	last := time.Now()
+	go func(c <-chan int) {
+		for {
+			d := <-c
+			cur := time.Now()
+			if d <= 0 {
+				log.Warnw("got signal to stop", "data", d)
+				break
+			}
+
+			log.Infow("task to run", "data", d, "interval", cur.Sub(last))
+			last = cur
+		}
+		doneC <- true
+
+	}(dataC)
+
+	r := xr.NewLimiter(xr.Every(time.Duration(float64(time.Second)*2.5)), 2)
+	ctx := context.TODO()
+	// ctx, _ := context.WithTimeout(context.Background(), 11*time.Second)
+
+	for i := 1; i <= 10; i += 2 {
+		if err := r.WaitN(ctx, 2); err != nil {
+			log.Warnw("got limiter error", "index", i, zap.Error(err))
+		} else {
+			log.Debugw("approved to send", "index", i)
+			dataC <- i
+			dataC <- i + 1
 		}
 	}
 
