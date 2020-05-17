@@ -31,8 +31,8 @@ func main() {
 
 	// test1()
 	// test2()
-	// test3()
-	test4()
+	test3()
+	// test4()
 }
 
 func test1() {
@@ -154,7 +154,6 @@ func test4() {
 
 	r := xr.NewLimiter(xr.Every(time.Duration(float64(time.Second)*2.5)), 2)
 	ctx := context.TODO()
-	// ctx, _ := context.WithTimeout(context.Background(), 11*time.Second)
 
 	for i := 1; i <= 10; i += 2 {
 		if err := r.WaitN(ctx, 2); err != nil {
