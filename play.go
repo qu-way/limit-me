@@ -85,6 +85,8 @@ func test3() {
 	dataC := make(chan int, 10)
 	doneC := make(chan bool)
 
+	start := time.Now()
+
 	last := time.Now()
 	go func(c <-chan int) {
 		for {
@@ -113,5 +115,8 @@ func test3() {
 
 	dataC <- 0
 	<-doneC
-	log.Debugw("all is done")
+
+	end := time.Now()
+
+	log.Debugw("all is done", "time_cost", end.Sub(start))
 }
